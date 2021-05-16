@@ -11,14 +11,25 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.1
  * Useful for simple vesting schedules like "advisors get all of their tokens
  * after 1 year".
  */
-contract TokenTimelock {
+contract SarenStackerTimelock {
     using SafeERC20 for IERC20;
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Caller is not the owner");
+        _;
+    }
 
     // ERC20 basic token contract being held
     IERC20 immutable private _token;
 
     // beneficiary of tokens after they are released
-    address immutable private _beneficiary;
+    address private _beneficiary;
+
+    // address that is the owner
+    address immutable private _owner;
 
     // timestamp when token release is enabled
     uint256 immutable private _releaseTime;
@@ -27,6 +38,7 @@ contract TokenTimelock {
         // solhint-disable-next-line not-rely-on-time
         require(releaseTime_ > block.timestamp, "TokenTimelock: release time is before current time");
         _token = token_;
+        _owner = msg.sender;
         _beneficiary = beneficiary_;
         _releaseTime = releaseTime_;
     }
@@ -43,6 +55,13 @@ contract TokenTimelock {
      */
     function beneficiary() public view virtual returns (address) {
         return _beneficiary;
+    }
+
+    /**
+     * @notice Changes the beneficiary of the tokens.
+     */
+    function changeBeneficiary(address add) public virtual onlyOwner {
+        _beneficiary = add;
     }
 
     /**
